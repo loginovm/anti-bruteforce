@@ -1,0 +1,11 @@
+[app]
+url = ":50051"
+
+[datasource]
+host = "localhost"
+port = "5432"
+user = "otus_user"
+password = "dev_pass"
+db-name = "antibforce"
+ssl = "disable"
+migrations-dir = "migrations"
