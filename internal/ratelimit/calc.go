@@ -3,16 +3,16 @@ package ratelimit
 import "time"
 
 type Calc struct {
-	period  time.Duration
-	time    currentTime
-	storage BucketStorage
+	resetCounterAfter time.Duration
+	time              currentTime
+	storage           BucketStorage
 }
 
-func NewCalc(period time.Duration, storage BucketStorage) *Calc {
+func NewCalc(resetCounterAfter time.Duration, storage BucketStorage) *Calc {
 	return &Calc{
-		period:  period,
-		time:    &curTimeReal{},
-		storage: storage,
+		resetCounterAfter: resetCounterAfter,
+		time:              &curTimeReal{},
+		storage:           storage,
 	}
 }
 
@@ -29,7 +29,7 @@ func (c *Calc) TryIncrement(key string, limit int) bool {
 		return true
 	}
 	now := c.time.Now()
-	if b.IsExpired(now, c.period) {
+	if b.IsExpired(now, c.resetCounterAfter) {
 		// control period elapsed so reset counter
 		b.startDate = now
 		b.counter = 1
@@ -43,4 +43,8 @@ func (c *Calc) TryIncrement(key string, limit int) bool {
 	}
 
 	return false
+}
+
+func (c *Calc) ResetBucket(key string) {
+	c.storage.DeleteBucket(key)
 }

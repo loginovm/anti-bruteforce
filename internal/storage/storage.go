@@ -87,7 +87,7 @@ func (s *Storage) UpdateSettings(ctx context.Context, setting models.Setting) er
 	query := `UPDATE settings
 SET login_count = :login_count,
     password_count = :password_count,
-    ip_count = :ip_count,
+    ip_count = :ip_count
 WHERE id = :id
 `
 	_, err := s.db.NamedExecContext(ctx, query, setting)

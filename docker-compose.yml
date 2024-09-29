@@ -1,0 +1,22 @@
+services:
+  app:
+    container_name: anti-bruteforce-app
+    build: ./
+    ports:
+      - "8080:8080"
+    environment:
+      DB_HOST: db
+    depends_on:
+      - db
+  db:
+    image: postgres:14
+    volumes:
+      - pg_data_antibforce:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: otus_user
+      POSTGRES_PASSWORD: dev_pass
+      POSTGRES_DB: antibforce
+      PGDATA: /var/lib/postgresql/data/pgdata
+
+volumes:
+  pg_data_antibforce:

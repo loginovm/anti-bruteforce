@@ -8,9 +8,20 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/ilyakaznacheev/cleanenv"
+	"github.com/loginovm/anti-bruteforce/internal/app"
+	"github.com/loginovm/anti-bruteforce/internal/ratelimit"
+	"github.com/loginovm/anti-bruteforce/internal/server/http"
 	"github.com/loginovm/anti-bruteforce/internal/storage"
+	_ "github.com/loginovm/anti-bruteforce/swagger/docs"
+)
+
+const (
+	checkLimitPeriod    = 60 * time.Second // Period after which (ip/login/password)counter is reset
+	recycleBucketPeriod = 3 * time.Minute
+	maxBucketAge        = 10 * time.Minute
 )
 
 // Args command-line parameters.
@@ -38,10 +49,44 @@ func main() {
 	}
 	defer store.Close()
 
-	Print(ctx, store)
+	app := createApp(store)
+	server := http.NewServer(config.App.URL, app, config.App.Swagger)
+
+	go func() {
+		<-ctx.Done()
+		if err = server.Stop(); err != nil {
+			log.Fatal("failed to stop server: " + err.Error())
+		}
+	}()
+
+	log.Println("anti-bruteforce is running...")
+	if err = server.Start(ctx); err != nil {
+		log.Fatal("failed to start server: " + err.Error())
+	}
 }
 
-func CreateStorage(ctx context.Context, cfg Config) (storage.Repo, error) {
+func createApp(repo storage.Repo) *app.App {
+	ipBucketStore := &ratelimit.MemStorage{}
+	loginBucketStore := &ratelimit.MemStorage{}
+	passBucketStore := &ratelimit.MemStorage{}
+	ipCalc := ratelimit.NewCalc(checkLimitPeriod, ipBucketStore)
+	loginCalc := ratelimit.NewCalc(checkLimitPeriod, loginBucketStore)
+	passCalc := ratelimit.NewCalc(checkLimitPeriod, passBucketStore)
+	app := app.New(loginCalc, passCalc, ipCalc, repo)
+
+	go func() {
+		for {
+			ipBucketStore.Clean(time.Now(), maxBucketAge)
+			loginBucketStore.Clean(time.Now(), maxBucketAge)
+			passBucketStore.Clean(time.Now(), maxBucketAge)
+			time.Sleep(recycleBucketPeriod)
+		}
+	}()
+
+	return app
+}
+
+func CreateStorage(ctx context.Context, cfg Config) (*storage.Storage, error) {
 	config := cfg.Datasource
 	s := storage.New()
 	err := s.Connect(ctx,
@@ -61,7 +106,7 @@ func ProcessArgs(cfg interface{}) Args {
 	var a Args
 
 	f := flag.NewFlagSet("Calendar app", 1)
-	f.StringVar(&a.ConfigPath, "config", "/etc/calendar/config.toml", "Path to configuration file")
+	f.StringVar(&a.ConfigPath, "config", "config.toml", "Path to configuration file")
 
 	// Embed config descriptions into command help
 	fu := f.Usage
@@ -74,22 +119,4 @@ func ProcessArgs(cfg interface{}) Args {
 
 	f.Parse(os.Args[1:])
 	return a
-}
-
-func Print(ctx context.Context, store storage.Repo) {
-	wl, err := store.GetWList(ctx)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Printf("White list: %+v\n", wl)
-	bl, err := store.GetBList(ctx)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Printf("Black list: %+v\n", bl)
-	s, err := store.GetSettings(ctx)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Printf("Settings: %+v\n", s)
 }
