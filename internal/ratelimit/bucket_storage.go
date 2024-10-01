@@ -33,11 +33,11 @@ func (s *MemStorage) DeleteBucket(key string) {
 }
 
 // Clean execute in goroutine with some interval.
-func (s *MemStorage) Clean(now time.Time, period time.Duration) {
+func (s *MemStorage) Clean(now time.Time, maxBucketAge time.Duration) {
 	s.bucketMap.Range(func(k any, v any) bool {
 		if v != nil {
 			b := v.(*Bucket)
-			if b.IsExpired(now, period) {
+			if b.IsExpired(now, maxBucketAge) {
 				s.bucketMap.Delete(k)
 			}
 		}

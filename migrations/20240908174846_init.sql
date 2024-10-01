@@ -16,14 +16,6 @@ CREATE TABLE settings (
     ip_count int not null
 );
 
-INSERT INTO white_list(cidr, created_at)
-VALUES ('192.1.10.0/30', NOW()),
-       ('192.2.10.0/30', NOW());
-
-INSERT INTO black_list(cidr, created_at)
-VALUES ('192.100.10.0/30', NOW()),
-       ('192.200.10.0/30', NOW());
-
 INSERT INTO settings (login_count, password_count, ip_count)
 VALUES (10, 100, 1000);
 

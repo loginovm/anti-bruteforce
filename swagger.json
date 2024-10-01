@@ -1,0 +1,400 @@
+{
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "schemes": [
+    "http"
+  ],
+  "swagger": "2.0",
+  "info": {
+    "title": "Anti-Bruteforce API.",
+    "version": "1.0.0"
+  },
+  "host": "localhost:8080",
+  "basePath": "/",
+  "paths": {
+    "/blacklist": {
+      "get": {
+        "tags": [
+          "IPBlacklist"
+        ],
+        "summary": "Get IP blacklist.",
+        "operationId": "getIPBlackList",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/BWListResponse"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "IPBlacklist"
+        ],
+        "summary": "Add IP to blacklist.",
+        "operationId": "addIPToBlackList",
+        "parameters": [
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/CidrRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/OkResponse"
+          },
+          "400": {
+            "$ref": "#/responses/BadRequestResponse"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "IPBlacklist"
+        ],
+        "summary": "Delete IP from blacklist.",
+        "operationId": "deleteIPFromBlackList",
+        "parameters": [
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/CidrRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/OkResponse"
+          },
+          "400": {
+            "$ref": "#/responses/BadRequestResponse"
+          }
+        }
+      }
+    },
+    "/check-login-attempt": {
+      "put": {
+        "tags": [
+          "Check"
+        ],
+        "summary": "Check login attempt.",
+        "operationId": "checkLoginAttempt",
+        "parameters": [
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/CheckLoginAttemptRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/CheckLoginAttemptResponse"
+          },
+          "400": {
+            "$ref": "#/responses/BadRequestResponse"
+          }
+        }
+      }
+    },
+    "/reset-ip": {
+      "put": {
+        "tags": [
+          "Reset"
+        ],
+        "summary": "Reset IP.",
+        "operationId": "resetIPBucket",
+        "parameters": [
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/IPRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/OkResponse"
+          },
+          "400": {
+            "$ref": "#/responses/BadRequestResponse"
+          }
+        }
+      }
+    },
+    "/reset-login": {
+      "put": {
+        "tags": [
+          "Reset"
+        ],
+        "summary": "Reset Login.",
+        "operationId": "resetLoginBucket",
+        "parameters": [
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/LoginRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/OkResponse"
+          },
+          "400": {
+            "$ref": "#/responses/BadRequestResponse"
+          }
+        }
+      }
+    },
+    "/settings": {
+      "get": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Get settings.",
+        "operationId": "getSettings",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/SettingsResponse"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Update settings.",
+        "operationId": "updateSettings",
+        "parameters": [
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/Setting"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/OkResponse"
+          },
+          "400": {
+            "$ref": "#/responses/BadRequestResponse"
+          }
+        }
+      }
+    },
+    "/whitelist": {
+      "get": {
+        "tags": [
+          "IPWhitelist"
+        ],
+        "summary": "Get IP whitelist.",
+        "operationId": "getIPWhiteList",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/BWListResponse"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "IPWhitelist"
+        ],
+        "summary": "Add IP to whitelist.",
+        "operationId": "addIPToWhiteList",
+        "parameters": [
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/CidrRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/OkResponse"
+          },
+          "400": {
+            "$ref": "#/responses/BadRequestResponse"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "IPWhitelist"
+        ],
+        "summary": "Delete IP from whitelist.",
+        "operationId": "deleteIPFromWhiteList",
+        "parameters": [
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/CidrRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/OkResponse"
+          },
+          "400": {
+            "$ref": "#/responses/BadRequestResponse"
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "BWListItem": {
+      "type": "object",
+      "properties": {
+        "Cidr": {
+          "type": "string"
+        },
+        "CreatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "ID": {
+          "type": "integer",
+          "format": "int64"
+        }
+      },
+      "x-go-package": "github.com/loginovm/anti-bruteforce/internal/storage/models"
+    },
+    "BWListResponse": {
+      "type": "object",
+      "properties": {
+        "Items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/BWListItem"
+          }
+        }
+      },
+      "x-go-package": "github.com/loginovm/anti-bruteforce/internal/server/http/models"
+    },
+    "CheckAttemptResponse": {
+      "type": "object",
+      "properties": {
+        "IsValid": {
+          "type": "boolean"
+        }
+      },
+      "x-go-package": "github.com/loginovm/anti-bruteforce/internal/server/http/models"
+    },
+    "CheckLoginAttemptRequest": {
+      "type": "object",
+      "properties": {
+        "IP": {
+          "type": "string"
+        },
+        "Login": {
+          "type": "string"
+        },
+        "Password": {
+          "type": "string"
+        }
+      },
+      "x-go-package": "github.com/loginovm/anti-bruteforce/internal/server/http/models"
+    },
+    "CidrRequest": {
+      "type": "object",
+      "properties": {
+        "Cidr": {
+          "type": "string"
+        }
+      },
+      "x-go-package": "github.com/loginovm/anti-bruteforce/internal/server/http/models"
+    },
+    "IPRequest": {
+      "type": "object",
+      "properties": {
+        "IP": {
+          "type": "string"
+        }
+      },
+      "x-go-package": "github.com/loginovm/anti-bruteforce/internal/server/http/models"
+    },
+    "LoginRequest": {
+      "type": "object",
+      "properties": {
+        "Login": {
+          "type": "string"
+        }
+      },
+      "x-go-package": "github.com/loginovm/anti-bruteforce/internal/server/http/models"
+    },
+    "Setting": {
+      "type": "object",
+      "properties": {
+        "IPCount": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "LoginCount": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "PasswordCount": {
+          "type": "integer",
+          "format": "int64"
+        }
+      },
+      "x-go-package": "github.com/loginovm/anti-bruteforce/internal/server/http/models"
+    }
+  },
+  "responses": {
+    "BWListResponse": {
+      "description": "",
+      "schema": {
+        "$ref": "#/definitions/BWListResponse"
+      }
+    },
+    "BadRequestResponse": {
+      "description": "Model for BadRequest response",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "x-go-name": "Message"
+          }
+        }
+      }
+    },
+    "CheckLoginAttemptResponse": {
+      "description": "",
+      "schema": {
+        "$ref": "#/definitions/CheckAttemptResponse"
+      }
+    },
+    "OkResponse": {
+      "description": "No content"
+    },
+    "SettingsResponse": {
+      "description": "",
+      "schema": {
+        "$ref": "#/definitions/Setting"
+      }
+    }
+  },
+  "securityDefinitions": {
+    "basic": {
+      "type": "basic"
+    }
+  }
+}

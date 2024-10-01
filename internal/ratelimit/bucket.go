@@ -7,7 +7,7 @@ type Bucket struct {
 	counter   int
 }
 
-func (b *Bucket) IsExpired(now time.Time, period time.Duration) bool {
+func (b *Bucket) IsExpired(now time.Time, maxAge time.Duration) bool {
 	elapsed := now.Sub(b.startDate)
-	return elapsed > period
+	return elapsed > maxAge
 }

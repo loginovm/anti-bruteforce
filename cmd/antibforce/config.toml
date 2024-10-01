@@ -1,5 +1,6 @@
 [app]
-url = ":50051"
+url = "localhost:8080"
+swagger = "http://localhost:58810"
 
 [datasource]
 host = "localhost"

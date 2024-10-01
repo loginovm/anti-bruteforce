@@ -1,3 +1,5 @@
+//go:build !integration
+
 package ratelimit
 
 import (
@@ -11,9 +13,9 @@ func TestCalc(t *testing.T) {
 	t.Run("all cases workflow", func(t *testing.T) {
 		fakeTime := &curTimeFake{now: time.Now()}
 		sut := Calc{
-			period:  time.Minute,
-			time:    fakeTime,
-			storage: &MemStorage{},
+			resetCounterAfter: time.Minute,
+			time:              fakeTime,
+			storage:           &MemStorage{},
 		}
 		key := "k"
 		limit := 2
@@ -50,9 +52,9 @@ func TestCalc(t *testing.T) {
 	t.Run("bucket reset", func(t *testing.T) {
 		fakeTime := &curTimeFake{now: time.Now()}
 		sut := Calc{
-			period:  time.Minute,
-			time:    fakeTime,
-			storage: &MemStorage{},
+			resetCounterAfter: time.Minute,
+			time:              fakeTime,
+			storage:           &MemStorage{},
 		}
 		key := "k"
 		limit := 2
