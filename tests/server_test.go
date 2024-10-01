@@ -4,13 +4,13 @@ package tests
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"math"
 	"net/http"
-	"os/signal"
+	"os/exec"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -25,9 +25,9 @@ import (
 func TestLoginAttempts(t *testing.T) {
 	testAttemptsCount := 3
 	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	defer func() { cleanUp(cancel) }()
 	resetCounterAfter := 2 * time.Second // n,m,k attempts count are reset after 2 sec
-	err := runServer(ctx, cancel, appCfg, resetCounterAfter)
+	err := runServer(ctx, appCfg, resetCounterAfter)
 	require.NoError(t, err)
 
 	tests := []struct {
@@ -85,9 +85,9 @@ func setSettings(loginAttempts, passwordAttempts, ipAttempts int) error {
 }
 
 func TestBlackList(t *testing.T) {
-	ctx, cancel := signal.NotifyContext(context.Background())
-	defer cancel()
-	err := runServerDefault(ctx, cancel, appCfg)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer func() { cleanUp(cancel) }()
+	err := runServerDefault(ctx, appCfg)
 	require.NoError(t, err)
 
 	err = setSettings(100, 100, 100)
@@ -110,9 +110,9 @@ func TestBlackList(t *testing.T) {
 }
 
 func TestWhiteList(t *testing.T) {
-	ctx, cancel := signal.NotifyContext(context.Background())
-	defer cancel()
-	err := runServerDefault(ctx, cancel, appCfg)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer func() { cleanUp(cancel) }()
+	err := runServerDefault(ctx, appCfg)
 	require.NoError(t, err)
 
 	err = setSettings(1, 100, 100)
@@ -136,9 +136,9 @@ func TestWhiteList(t *testing.T) {
 }
 
 func TestUpdateSettings(t *testing.T) {
-	ctx, cancel := signal.NotifyContext(context.Background())
-	defer cancel()
-	err := runServerDefault(ctx, cancel, appCfg)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer func() { cleanUp(cancel) }()
+	err := runServerDefault(ctx, appCfg)
 	require.NoError(t, err)
 	url := getServerURL(appCfg.AppURL, "settings")
 	expected := models.Setting{
@@ -157,13 +157,12 @@ func TestUpdateSettings(t *testing.T) {
 	require.Equal(t, expected, actual)
 }
 
-func runServerDefault(ctx context.Context, cancel context.CancelFunc, cfg appConfig) error {
-	return runServer(ctx, cancel, cfg, 60*time.Second)
+func runServerDefault(ctx context.Context, cfg appConfig) error {
+	return runServer(ctx, cfg, 60*time.Second)
 }
 
 func runServer(
 	ctx context.Context,
-	cancel context.CancelFunc,
 	cfg appConfig,
 	resetCounterAfter time.Duration,
 ) error {
@@ -173,18 +172,22 @@ func runServer(
 	}
 	app := createApp(store, resetCounterAfter)
 	server := api.NewServer(cfg.AppURL, app, "")
+	var stopping atomic.Bool
 	go func() {
 		<-ctx.Done()
+		stopping.Store(true)
+		log.Println("Stopping server")
 		if err = server.Stop(); err != nil {
-			log.Fatal("failed to stop server: " + err.Error()) //nolint:gocritic
+			log.Fatal("failed to stop server: " + err.Error())
 		}
 	}()
 
 	go func() {
 		log.Println("anti-bruteforce is running...")
-		if err = server.Start(ctx); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Fatal("failed to start server: " + err.Error())
-			cancel()
+		if err = server.Start(ctx); err != nil {
+			if !stopping.Load() {
+				log.Fatal("failed to start server: \n" + err.Error())
+			}
 		}
 		store.Close()
 	}()
@@ -205,19 +208,31 @@ func createApp(repo storage.Repo, resetCounterAfter time.Duration) *app.App {
 }
 
 func createStorage(ctx context.Context, cfg appConfig) (*storage.Storage, error) {
+	if err := exec.Command("sh", "./create_test_db.sh").Run(); err != nil {
+		return nil, err
+	}
+	time.Sleep(time.Millisecond * 1000)
 	config := cfg.DB
 	s := storage.New()
 	err := s.Connect(ctx,
 		fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
 			config.Host, config.Port, config.Username, config.Password, config.Name, "disable"))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("connect to db: %w", err)
 	}
 	if err = s.RunMigration(config.MigrationsDir); err != nil {
 		return nil, err
 	}
 
 	return s, nil
+}
+
+func cleanUp(cancel context.CancelFunc) {
+	log.Println("Test cleanup start")
+	cancel()
+	if err := exec.Command("sh", "./remove_test_db.sh").Run(); err != nil {
+		log.Println(err)
+	}
 }
 
 func getServerURL(host string, path string) string {
