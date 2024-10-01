@@ -49,7 +49,7 @@ test:
 
 .PHONY: test-integration
 test-integration:
-	sh ./tests/test_integration.sh
+	go test ./... -tags=integration
 
 .PHONY: install-lint-deps
 install-lint-deps:

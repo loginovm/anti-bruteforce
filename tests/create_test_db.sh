@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -xeuo pipefail
 
-TESTS_TAG=integration
 CONT_NAME=antibforce_test
 VOL_NAME=pg_data_antibforce_test
 
@@ -16,9 +15,3 @@ docker run -d --name ${CONT_NAME} \
 	-v ${VOL_NAME}:/var/lib/postgresql/data \
 	-p 5532:5432 \
 	postgres:14
-
-sleep 1
-go test ./... -tags=${TESTS_TAG}
-docker container rm ${CONT_NAME} -f
-docker volume remove ${VOL_NAME}
-
